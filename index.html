@@ -1,336 +1,317 @@
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChronoCrypt — Time-Locked Text Vault</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ChronoCrypt — Zero-Knowledge Time-Locked Vault</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body {
-      background-color: #020617;
-      color: #f1f5f9;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #030712;
+      color: #f9fafb;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
     .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.7;
+      cursor: pointer;
     }
   </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
+<body class="min-h-screen flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-200">
 
-  <!-- TOP HEADER -->
-  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-20">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-white/10 bg-gray-950/80 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xl">
-          ⏳
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shadow-inner">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
         </div>
         <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-base font-bold tracking-tight text-white">CHRONOCRYPT VAULT</h1>
-            <span class="text-[10px] mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              AES-256-GCM + Server Lock
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold tracking-tight text-white">CHRONOCRYPT</h1>
+            <span class="text-[10px] mono font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              AES-256-GCM
             </span>
           </div>
-          <p class="text-xs text-slate-400">Zero-Knowledge Time-Locked Message Vault</p>
+          <p class="text-xs text-gray-400">Zero-Knowledge Time-Locked Vault</p>
         </div>
       </div>
 
-      <!-- NAVIGATION TABS -->
-      <div class="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
-        <button id="tabCreateBtn" onclick="switchTab('create')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition">
-          + नया मैसेज लॉक करें
+      <!-- TAB SWITCHER -->
+      <div class="grid grid-cols-2 rounded-xl bg-gray-900/90 p-1 border border-white/10">
+        <button id="tabCreateBtn" onclick="switchTab('create')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-gray-950 shadow-sm transition-all">
+          Create Vault
         </button>
-        <button id="tabUnlockBtn" onclick="switchTab('unlock')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">
-          🔓 मैसेज खोलें / Countdown
+        <button id="tabUnlockBtn" onclick="switchTab('unlock')" class="px-4 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-all">
+          Access Vault
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
-
-    <!-- SUPABASE CONFIG BOX (Shows only if keys are not hardcoded) -->
-    <div id="configBanner" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-300 mono">⚙️ Supabase Connection Setup (सिर्फ एक बार डालें)</h2>
-        <button onclick="toggleConfigBox()" class="text-xs text-slate-400 underline">छुपाएं</button>
-      </div>
-      <p class="text-xs text-slate-300">
-        अपना <b>Supabase Project URL</b> और <b>Anon Public Key</b> नीचे डालकर Save दबाएं (यह आपके फोन के ब्राउज़र में सेव हो जाएगा):
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input id="inputSupabaseUrl" type="text" placeholder="https://xxxx.supabase.co" class="w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs mono text-white" />
-        <input id="inputSupabaseKey" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..." class="w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs mono text-white" />
-      </div>
-      <button onclick="saveSupabaseConfig()" class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold text-xs">
-        Save & Connect Supabase
-      </button>
-    </div>
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8">
 
     <!-- ================================================================== -->
-    <!-- SECTION 1: CREATE VAULT TAB -->
+    <!-- VIEW 1: CREATE NEW VAULT -->
     <!-- ================================================================== -->
     <section id="sectionCreate" class="space-y-6">
-      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <h2 class="text-base font-semibold text-white">गुप्त मैसेज पर टाइम-लॉक लगाएं</h2>
-            <p class="text-xs text-slate-400 mt-0.5">
-              आपका मैसेज आपके ब्राउज़र में ही AES-256-GCM से लॉक हो जाता है। तय समय से पहले आप खुद भी इसे डेटाबेस में नहीं देख सकते।
-            </p>
-          </div>
-          <button onclick="toggleConfigBox()" class="text-[11px] mono text-slate-400 hover:text-emerald-400 border border-slate-800 px-2.5 py-1 rounded-lg">
-            ⚙️ API Keys
-          </button>
+      <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div>
+          <h2 class="text-lg font-semibold text-white">Seal a Time-Locked Secret</h2>
+          <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+            Your message is encrypted locally inside your browser using 256-bit AES-GCM before transmission. It remains mathematically unreadable until the server clock reaches your exact unlock timestamp.
+          </p>
         </div>
 
-        <!-- SECRET TEXT INPUT -->
-        <div>
-          <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-2">
-            1. अपना गुप्त मैसेज या पासवर्ड यहाँ लिखें:
-          </label>
+        <!-- SECRET PAYLOAD INPUT -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="secretInput" class="text-xs font-medium text-gray-300">
+              Secret Message or Credentials
+            </label>
+            <span id="byteCounter" class="text-[11px] mono text-gray-500">0 bytes</span>
+          </div>
           <textarea
             id="secretInput"
             rows="5"
-            placeholder="यहाँ अपना सीक्रेट मैसेज, पासवर्ड, या नोट लिखें जिसे आप तय समय तक लॉक करना चाहते हैं..."
-            class="w-full rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none p-3.5 text-sm mono text-slate-100 placeholder-slate-600"
+            oninput="updateByteCounter()"
+            placeholder="Enter confidential notes, recovery phrases, passwords, or time-capsuled messages..."
+            class="w-full rounded-xl bg-gray-950/90 border border-white/10 focus:border-emerald-500/60 focus:outline-none p-4 text-sm mono text-gray-100 placeholder-gray-600 transition resize-y"
           ></textarea>
         </div>
 
-        <!-- UNLOCK TIME PICKER + QUICK PRESETS -->
-        <div>
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <label class="text-xs font-semibold uppercase tracking-wider text-slate-300">
-              2. कब खुलना चाहिए? (तारीख और समय चुनें):
+        <!-- UNLOCK TIMESTAMP & PRESETS -->
+        <div class="space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label for="unlockTimeInput" class="text-xs font-medium text-gray-300">
+              Unlock Date & Time
             </label>
             <div class="flex flex-wrap gap-1.5">
-              <button type="button" onclick="setQuickTime(2)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300">+2 मिनट (Test)</button>
-              <button type="button" onclick="setQuickTime(60)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">+1 घंटा</button>
-              <button type="button" onclick="setQuickTime(1440)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">+1 दिन</button>
-              <button type="button" onclick="setQuickTime(4320)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">+3 दिन</button>
+              <button type="button" onclick="setQuickTime(2)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+2m</button>
+              <button type="button" onclick="setQuickTime(15)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+15m</button>
+              <button type="button" onclick="setQuickTime(60)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+1h</button>
+              <button type="button" onclick="setQuickTime(1440)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+24h</button>
+              <button type="button" onclick="setQuickTime(4320)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+3d</button>
+              <button type="button" onclick="setQuickTime(10080)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+7d</button>
             </div>
           </div>
           <input
             id="unlockTimeInput"
             type="datetime-local"
-            class="w-full rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none px-3.5 py-2.5 text-sm mono text-white"
+            class="w-full rounded-xl bg-gray-950/90 border border-white/10 focus:border-emerald-500/60 focus:outline-none px-4 py-3 text-sm mono text-white transition"
           />
         </div>
 
-        <!-- BURN AFTER READ OPTION -->
-        <label class="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 cursor-pointer">
-          <input id="burnAfterReadInput" type="checkbox" class="mt-1 h-4 w-4 accent-emerald-500" />
-          <span class="text-xs text-slate-300">
-            <strong class="text-white block">🔥 एक बार खुलने के बाद हमेशा के लिए मिटा दें (Burn After Read)</strong>
-            जैसे ही समय पूरा होने पर यह मैसेज एक बार खुलेगा, डेटाबेस से इसकी चाबी और मैसेज दोनों हमेशा के लिए डिलीट हो जाएंगे।
+        <!-- SELF-DESTRUCT OPTION -->
+        <label class="flex items-start gap-3.5 p-4 rounded-xl bg-gray-950/60 border border-white/10 cursor-pointer hover:border-white/20 transition">
+          <input id="burnAfterReadInput" type="checkbox" class="mt-0.5 h-4 w-4 rounded accent-emerald-500" />
+          <span class="text-xs text-gray-400 leading-relaxed">
+            <strong class="text-gray-200 font-medium block mb-0.5">Burn After First Read (Self-Destruct)</strong>
+            Permanently shred the encryption key and wipe the vault from the server immediately after it is unlocked and viewed once.
           </span>
         </label>
 
-        <!-- ERROR MESSAGE -->
-        <div id="createErrorBox" class="hidden p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 mono"></div>
+        <!-- ERROR ALERT -->
+        <div id="createErrorBox" class="hidden p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 mono"></div>
 
-        <!-- SUBMIT BUTTON -->
+        <!-- SEAL BUTTON -->
         <button
           id="createVaultBtn"
           onclick="handleCreateVault()"
-          class="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-emerald-500/10"
+          class="w-full py-3.5 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-gray-950 font-semibold text-sm transition shadow-lg shadow-emerald-500/15"
         >
-          🔒 मैसेज को AES-256 से लॉक करें और Vault बनाएं
+          Encrypt & Seal Time-Locked Vault
         </button>
 
-        <!-- CREATED VAULT RESULT BOX -->
-        <div id="createdResultBox" class="hidden mt-6 pt-6 border-t border-slate-800 space-y-4">
-          <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-1">
-            <div class="text-xs mono uppercase text-emerald-400 font-bold">✓ आपका मैसेज सफलतापूर्वक लॉक हो गया है!</div>
-            <div id="createdUnlockTimeText" class="text-xs text-slate-300"></div>
+        <!-- GENERATED CREDENTIALS MODAL / CARD -->
+        <div id="createdResultBox" class="hidden pt-6 border-t border-white/10 space-y-5">
+          <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-xs mono uppercase tracking-wider text-emerald-400 font-semibold">Vault Sealed Successfully</span>
+            </div>
+            <span id="createdUnlockTimeText" class="text-xs mono text-gray-300"></span>
           </div>
 
-          <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
-            ⚠️ <b>जरूरी सूचना:</b> नीचे दिया गया <b>Vault Code</b> या <b>Shareable Link</b> कॉपी करके सुरक्षित रख लें। इसके बिना समय पूरा होने के बाद भी मैसेज नहीं खुलेगा!
+          <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200/90 leading-relaxed">
+            <strong class="text-amber-300">Save Your Access Credentials:</strong> Your client decryption key is embedded inside the link and access token below. It is never stored on our servers and cannot be recovered if lost.
           </div>
 
-          <div>
-            <label class="text-[11px] mono uppercase text-slate-400 block mb-1">
-              आपका Secret Vault Access Code:
+          <!-- SHAREABLE URL -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] mono uppercase tracking-wider text-gray-400 block">
+              Shareable Vault Link
             </label>
             <div class="flex gap-2">
-              <input id="resultAccessCode" type="text" readonly class="flex-1 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs mono text-emerald-300" />
-              <button onclick="copyValue('resultAccessCode')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white">
-                Copy Code
+              <input id="resultShareLink" type="text" readonly class="flex-1 rounded-xl bg-gray-950 border border-white/10 px-3.5 py-2.5 text-xs mono text-emerald-300 focus:outline-none" />
+              <button id="copyLinkBtn" onclick="copyValue('resultShareLink', 'copyLinkBtn', 'Copy Link')" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-white transition whitespace-nowrap">
+                Copy Link
               </button>
             </div>
           </div>
 
-          <div>
-            <label class="text-[11px] mono uppercase text-slate-400 block mb-1">
-              डायरेक्ट खुलने वाला लिंक (Shareable Link):
+          <!-- ACCESS TOKEN -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] mono uppercase tracking-wider text-gray-400 block">
+              Vault Access Token
             </label>
             <div class="flex gap-2">
-              <input id="resultShareLink" type="text" readonly class="flex-1 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs mono text-slate-300" />
-              <button onclick="copyValue('resultShareLink')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white">
-                Copy Link
+              <input id="resultAccessCode" type="text" readonly class="flex-1 rounded-xl bg-gray-950 border border-white/10 px-3.5 py-2.5 text-xs mono text-gray-300 focus:outline-none" />
+              <button id="copyTokenBtn" onclick="copyValue('resultAccessCode', 'copyTokenBtn', 'Copy Token')" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-white transition whitespace-nowrap">
+                Copy Token
               </button>
             </div>
           </div>
 
           <button
             onclick="openCreatedVaultInUnlockTab()"
-            class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-400 transition"
+            class="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-emerald-400 transition"
           >
-            ⏳ अभी लाइव काउंटडाउन घड़ी देखें ➔
+            View Live Countdown Timer →
           </button>
         </div>
       </div>
     </section>
 
     <!-- ================================================================== -->
-    <!-- SECTION 2: UNLOCK & COUNTDOWN TAB -->
+    <!-- VIEW 2: ACCESS & UNLOCK VAULT -->
     <!-- ================================================================== -->
     <section id="sectionUnlock" class="hidden space-y-6">
-      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
-        <h2 class="text-base font-semibold text-white">टाइम-लॉक मैसेज चेक करें या अनलॉक करें</h2>
-        <p class="text-xs text-slate-400">
-          अपना <b>Vault Access Code</b> या <b>Link</b> नीचे पेस्ट करके <b>Load Vault</b> दबाएं:
-        </p>
+      <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
+        <div>
+          <h2 class="text-lg font-semibold text-white">Access Time-Locked Vault</h2>
+          <p class="text-xs text-gray-400 mt-1">
+            Enter your Vault Access Token or Shareable Link below to synchronize with the server clock.
+          </p>
+        </div>
 
         <div class="flex flex-col sm:flex-row gap-2.5">
           <input
             id="unlockAccessInput"
             type="text"
-            placeholder="यहाँ अपना Vault Code या Link पेस्ट करें..."
-            class="flex-1 rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none px-3.5 py-2.5 text-xs mono text-white"
+            placeholder="Paste Vault Access Token or Shareable Link..."
+            class="flex-1 rounded-xl bg-gray-950/90 border border-white/10 focus:border-emerald-500/60 focus:outline-none px-4 py-3 text-xs mono text-white placeholder-gray-600 transition"
           />
           <button
             id="loadVaultBtn"
             onclick="handleLoadVault()"
-            class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition"
+            class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs transition whitespace-nowrap"
           >
             Load Vault
           </button>
         </div>
 
-        <div id="unlockAlertBox" class="hidden p-3.5 rounded-xl border text-xs mono"></div>
+        <div id="unlockAlertBox" class="hidden p-4 rounded-xl border text-xs mono leading-relaxed"></div>
       </div>
 
-      <!-- VAULT COUNTDOWN & STATUS DISPLAY -->
-      <div id="vaultDisplayCard" class="hidden bg-slate-900/70 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-4">
+      <!-- VAULT LIVE STATUS CARD -->
+      <div id="vaultDisplayCard" class="hidden glass-card rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div>
-            <span class="text-[10px] mono uppercase text-slate-400 block">Vault ID</span>
-            <span id="displayVaultId" class="text-xs mono text-white"></span>
+            <span class="text-[10px] mono uppercase tracking-wider text-gray-500 block">Vault Reference ID</span>
+            <span id="displayVaultId" class="text-xs mono text-gray-200"></span>
           </div>
-          <span id="displayStatusBadge" class="text-xs mono px-3 py-1 rounded-full border font-semibold"></span>
+          <span id="displayStatusBadge" class="text-[11px] mono px-3 py-1 rounded-full border font-semibold"></span>
         </div>
 
-        <!-- COUNTDOWN VIEW (WHEN LOCKED) -->
-        <div id="lockedCountdownArea" class="py-4 text-center space-y-5">
-          <p class="text-xs mono uppercase tracking-widest text-slate-400">
-            सर्वर घड़ी के अनुसार खुलने में बचा समय
-          </p>
+        <!-- LOCKED COUNTDOWN STATE -->
+        <div id="lockedCountdownArea" class="py-6 text-center space-y-6">
+          <div class="space-y-1">
+            <p class="text-[11px] mono uppercase tracking-widest text-gray-400">
+              Time Remaining Until Server Key Release
+            </p>
+            <p id="targetUnlockSubtext" class="text-xs text-gray-500 mono"></p>
+          </div>
 
-          <div class="grid grid-cols-4 gap-2.5 max-w-md mx-auto">
-            <div class="bg-slate-950 border border-slate-800 rounded-xl py-3 px-2">
-              <div id="cdDays" class="text-2xl sm:text-3xl mono font-bold text-white">00</div>
-              <div class="text-[10px] mono text-slate-500 mt-1">DAYS</div>
+          <div class="grid grid-cols-4 gap-3 max-w-md mx-auto">
+            <div class="bg-gray-950/90 border border-white/10 rounded-2xl py-4 px-2">
+              <div id="cdDays" class="text-2xl sm:text-4xl mono font-bold text-white tabular-nums">00</div>
+              <div class="text-[10px] mono text-gray-500 mt-1.5 tracking-wider">DAYS</div>
             </div>
-            <div class="bg-slate-950 border border-slate-800 rounded-xl py-3 px-2">
-              <div id="cdHours" class="text-2xl sm:text-3xl mono font-bold text-white">00</div>
-              <div class="text-[10px] mono text-slate-500 mt-1">HOURS</div>
+            <div class="bg-gray-950/90 border border-white/10 rounded-2xl py-4 px-2">
+              <div id="cdHours" class="text-2xl sm:text-4xl mono font-bold text-white tabular-nums">00</div>
+              <div class="text-[10px] mono text-gray-500 mt-1.5 tracking-wider">HOURS</div>
             </div>
-            <div class="bg-slate-950 border border-slate-800 rounded-xl py-3 px-2">
-              <div id="cdMins" class="text-2xl sm:text-3xl mono font-bold text-white">00</div>
-              <div class="text-[10px] mono text-slate-500 mt-1">MINS</div>
+            <div class="bg-gray-950/90 border border-white/10 rounded-2xl py-4 px-2">
+              <div id="cdMins" class="text-2xl sm:text-4xl mono font-bold text-white tabular-nums">00</div>
+              <div class="text-[10px] mono text-gray-500 mt-1.5 tracking-wider">MINS</div>
             </div>
-            <div class="bg-slate-950 border border-slate-800 rounded-xl py-3 px-2">
-              <div id="cdSecs" class="text-2xl sm:text-3xl mono font-bold text-emerald-400">00</div>
-              <div class="text-[10px] mono text-slate-500 mt-1">SECS</div>
+            <div class="bg-gray-950/90 border border-white/10 rounded-2xl py-4 px-2">
+              <div id="cdSecs" class="text-2xl sm:text-4xl mono font-bold text-emerald-400 tabular-nums">00</div>
+              <div class="text-[10px] mono text-gray-500 mt-1.5 tracking-wider">SECS</div>
             </div>
           </div>
 
-          <div class="max-w-md mx-auto space-y-2">
+          <div class="max-w-md mx-auto pt-2 space-y-2.5">
             <button
               id="tryUnlockBtn"
               onclick="attemptServerUnlock()"
-              class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs mono font-semibold transition"
+              class="w-full py-3 px-4 rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-300 border border-white/10 text-xs mono font-medium transition"
             >
-              🔐 अभी सर्वर से खोलने की कोशिश करें (Test Server Lock)
+              Verify Server Lock Status
             </button>
-            <p class="text-[11px] text-slate-500">
-              जब काउंटडाउन 00:00:00:00 पर पहुँचेगा, तो आपका मैसेज अपने-आप अनलॉक होकर नीचे दिख जाएगा।
+            <p class="text-[11px] text-gray-500">
+              This vault will automatically decrypt on screen the moment the server clock reaches zero.
             </p>
           </div>
         </div>
 
-        <!-- DECRYPTED PLAINTEXT VIEW (WHEN UNLOCKED) -->
-        <div id="unlockedPlaintextArea" class="hidden space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs mono uppercase text-emerald-400 font-bold">
-              ✓ समय पूरा हुआ — आपका अनलॉक किया गया मैसेज:
-            </span>
-            <button onclick="copyDecryptedText()" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs mono text-white">
-              Copy Message
+        <!-- UNLOCKED PLAINTEXT STATE -->
+        <div id="unlockedPlaintextArea" class="hidden space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="text-xs mono uppercase tracking-wider text-emerald-400 font-semibold">
+                Decrypted Secret Payload
+              </span>
+            </div>
+            <button id="copyDecryptedBtn" onclick="copyDecryptedText()" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs mono text-white transition">
+              Copy Secret
             </button>
           </div>
-          <pre id="decryptedMessageOutput" class="w-full p-4 rounded-xl bg-slate-950 border border-emerald-500/40 text-sm mono text-emerald-100 whitespace-pre-wrap break-words max-h-96 overflow-y-auto"></pre>
-        </div>
-
-        <!-- DATABASE CIPHERTEXT INSPECTOR -->
-        <div class="pt-4 border-t border-slate-800 space-y-2 text-xs mono">
-          <div class="text-slate-400 text-[11px]">
-            डेटाबेस में अभी क्या सेव है (असली मैसेज नहीं, सिर्फ लॉक किया हुआ Ciphertext):
-          </div>
-          <div id="displayCiphertext" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-500 break-all max-h-24 overflow-y-auto"></div>
+          <pre id="decryptedMessageOutput" class="w-full p-5 rounded-xl bg-gray-950 border border-emerald-500/30 text-sm mono text-emerald-100 whitespace-pre-wrap break-words max-h-96 overflow-y-auto leading-relaxed"></pre>
         </div>
       </div>
     </section>
 
   </main>
 
+  <!-- MINIMAL SECURITY FOOTER -->
+  <footer class="border-t border-white/5 py-5 text-center text-[11px] text-gray-600 mono">
+    End-to-End Client-Side AES-256-GCM • 2-of-2 Split-Key Architecture • Server Clock Enforced
+  </footer>
+
   <script>
     // ========================================================================
-    // 1. अपनी SUPABASE DETAILS यहाँ पेस्ट करें (या वेबसाइट खुलने पर बॉक्स में डालें)
+    // 1. PRODUCTION SUPABASE CONFIGURATION (LOCKED & HARDCODED)
     // ========================================================================
-    const DEFAULT_SUPABASE_URL = "https://xipganjsopjremxeiwav.supabase.co/rest/v1/";
-    const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_8BWrZEFaKQXCu70C4HzdBQ_jYWQeR71";
+    const SUPABASE_URL = "https://xipganjsopjremxeiwav.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_8BWrZEFaKQXCu70C4HzdBQ_jYWQeR71";
 
-    function getSupabaseCredentials() {
-      const savedUrl = localStorage.getItem("CHRONO_SUPABASE_URL") || DEFAULT_SUPABASE_URL;
-      const savedKey = localStorage.getItem("CHRONO_SUPABASE_KEY") || DEFAULT_SUPABASE_ANON_KEY;
-      return {
-        url: savedUrl.trim().replace(/\/+$/, ""),
-        key: savedKey.trim()
-      };
-    }
-
-    function isConfigured() {
-      const { url, key } = getSupabaseCredentials();
-      return url.startsWith("https://") && !url.includes("PASTE_YOUR") && key.length > 20 && !key.includes("PASTE_YOUR");
-    }
-
-    function toggleConfigBox() {
-      const banner = document.getElementById("configBanner");
-      banner.classList.toggle("hidden");
-      const { url, key } = getSupabaseCredentials();
-      if (!url.includes("PASTE_YOUR")) document.getElementById("inputSupabaseUrl").value = url;
-      if (!key.includes("PASTE_YOUR")) document.getElementById("inputSupabaseKey").value = key;
-    }
-
-    function saveSupabaseConfig() {
-      const url = document.getElementById("inputSupabaseUrl").value.trim();
-      const key = document.getElementById("inputSupabaseKey").value.trim();
-      if (!url.startsWith("https://") || key.length < 20) {
-        alert("कृपया सही Supabase Project URL (https://...) और Anon Key डालें।");
-        return;
-      }
-      localStorage.setItem("CHRONO_SUPABASE_URL", url);
-      localStorage.setItem("CHRONO_SUPABASE_KEY", key);
-      document.getElementById("configBanner").classList.add("hidden");
-      alert("Supabase सफलतापूर्वक कनेक्ट हो गया!");
-    }
+    // Clean up any old localStorage overrides from previous testing
+    try {
+      localStorage.removeItem("CHRONO_SUPABASE_URL");
+      localStorage.removeItem("CHRONO_SUPABASE_KEY");
+    } catch (_) {}
 
     // ========================================================================
-    // 2. WEB CRYPTO API (AES-256-GCM + 2-OF-2 SPLIT KEY)
+    // 2. WEB CRYPTO ENGINE (AES-256-GCM + 2-OF-2 XOR SPLIT-KEY)
     // ========================================================================
     function bytesToBase64Url(bytes) {
       let binary = "";
@@ -398,8 +379,12 @@
     async function reconstructAndDecryptSecret(ciphertextB64, ivB64, clientShareB64, serverShareB64, unlockIso) {
       const clientBytes = base64UrlToBytes(clientShareB64);
       const serverBytes = base64UrlToBytes(serverShareB64);
-      const dekBytes = new Uint8Array(32);
 
+      if (clientBytes.byteLength !== 32 || serverBytes.byteLength !== 32) {
+        throw new Error("Invalid decryption key share length.");
+      }
+
+      const dekBytes = new Uint8Array(32);
       for (let i = 0; i < 32; i++) {
         dekBytes[i] = clientBytes[i] ^ serverBytes[i];
       }
@@ -428,6 +413,8 @@
         );
 
         return new TextDecoder().decode(plainBuffer);
+      } catch (_) {
+        throw new Error("Cryptographic verification failed. Invalid access token or corrupted ciphertext.");
       } finally {
         dekBytes.fill(0);
         clientBytes.fill(0);
@@ -436,7 +423,7 @@
     }
 
     // ========================================================================
-    // 3. SUPABASE RPC CALLER & SERVER CLOCK SYNC
+    // 3. SUPABASE BACKEND RPC CLIENT & CLOCK SYNCHRONIZATION
     // ========================================================================
     let serverClockOffsetMs = 0;
     let activeVaultId = null;
@@ -446,19 +433,14 @@
     let autoUnlockFired = false;
 
     async function callSupabaseRpc(fnName, params) {
-      if (!isConfigured()) {
-        document.getElementById("configBanner").classList.remove("hidden");
-        throw new Error("कृपया पहले ऊपर पीले बॉक्स में अपना Supabase URL और Anon Key डालकर Save करें।");
-      }
-      const { url, key } = getSupabaseCredentials();
       const startMs = Date.now();
 
-      const res = await fetch(`${url}/rest/v1/rpc/${fnName}`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "apikey": key,
-          "Authorization": `Bearer ${key}`
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
         },
         body: JSON.stringify(params)
       });
@@ -467,7 +449,7 @@
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || data.error || "Supabase RPC Error");
+        throw new Error(data.message || data.error || "Server request failed.");
       }
 
       if (data && data.server_now) {
@@ -480,20 +462,26 @@
     }
 
     // ========================================================================
-    // 4. UI HANDLERS (CREATE & UNLOCK)
+    // 4. UI CONTROLLERS
     // ========================================================================
+    function updateByteCounter() {
+      const text = document.getElementById("secretInput").value;
+      const bytes = new TextEncoder().encode(text).byteLength;
+      document.getElementById("byteCounter").textContent = `${bytes.toLocaleString()} bytes`;
+    }
+
     function switchTab(tab) {
       const isCreate = tab === "create";
       document.getElementById("sectionCreate").classList.toggle("hidden", !isCreate);
       document.getElementById("sectionUnlock").classList.toggle("hidden", isCreate);
 
       document.getElementById("tabCreateBtn").className = isCreate
-        ? "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition"
-        : "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
+        ? "px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-gray-950 shadow-sm transition-all"
+        : "px-4 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-all";
 
       document.getElementById("tabUnlockBtn").className = !isCreate
-        ? "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition"
-        : "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
+        ? "px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-gray-950 shadow-sm transition-all"
+        : "px-4 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-all";
     }
 
     function setQuickTime(minutesAhead) {
@@ -516,20 +504,20 @@
       const burnAfterRead = document.getElementById("burnAfterReadInput").checked;
 
       if (!secretText.trim()) {
-        errorBox.textContent = "⚠️ कृपया पहले कोई गुप्त मैसेज लिखें।";
+        errorBox.textContent = "Please enter a secret message to encrypt.";
         errorBox.classList.remove("hidden");
         return;
       }
 
       const unlockDate = new Date(unlockVal);
       if (isNaN(unlockDate.getTime()) || unlockDate.getTime() <= Date.now() + 5000) {
-        errorBox.textContent = "⚠️ खुलने का समय अभी के समय से आगे (भविष्य में) होना चाहिए।";
+        errorBox.textContent = "Target unlock time must be in the future.";
         errorBox.classList.remove("hidden");
         return;
       }
 
       btn.disabled = true;
-      btn.textContent = "⏳ ब्राउज़र में AES-256 से लॉक किया जा रहा है...";
+      btn.textContent = "Encrypting Locally & Sealing Vault...";
 
       try {
         const bundle = await encryptAndSplitSecret(secretText, unlockDate);
@@ -548,16 +536,17 @@
         document.getElementById("resultAccessCode").value = accessCode;
         document.getElementById("resultShareLink").value = shareLink;
         document.getElementById("createdUnlockTimeText").textContent =
-          "खुलने का समय: " + new Date(created.unlock_at).toLocaleString();
+          "Unlocks: " + new Date(created.unlock_at).toLocaleString();
 
         document.getElementById("secretInput").value = "";
+        updateByteCounter();
         resultBox.classList.remove("hidden");
       } catch (err) {
-        errorBox.textContent = "⚠️ " + (err.message || "वॉल्ट बनाने में समस्या आई।");
+        errorBox.textContent = err.message || "Failed to seal vault.";
         errorBox.classList.remove("hidden");
       } finally {
         btn.disabled = false;
-        btn.textContent = "🔒 मैसेज को AES-256 से लॉक करें और Vault बनाएं";
+        btn.textContent = "Encrypt & Seal Time-Locked Vault";
       }
     }
 
@@ -588,8 +577,8 @@
       const box = document.getElementById("unlockAlertBox");
       box.textContent = msg;
       box.className = isError
-        ? "p-3.5 rounded-xl border text-xs mono bg-rose-500/10 border-rose-500/30 text-rose-300"
-        : "p-3.5 rounded-xl border text-xs mono bg-amber-500/10 border-amber-500/30 text-amber-300";
+        ? "p-4 rounded-xl border text-xs mono leading-relaxed bg-rose-500/10 border-rose-500/30 text-rose-300"
+        : "p-4 rounded-xl border text-xs mono leading-relaxed bg-amber-500/10 border-amber-500/30 text-amber-300";
       box.classList.remove("hidden");
     }
 
@@ -602,7 +591,7 @@
       document.getElementById("lockedCountdownArea").classList.remove("hidden");
 
       if (!parsed) {
-        showUnlockAlert("⚠️ कृपया पूरा Vault Access Code या Shareable Link पेस्ट करें।", true);
+        showUnlockAlert("Invalid format. Please paste a valid Vault Access Token or Shareable Link.", true);
         return;
       }
 
@@ -610,25 +599,30 @@
       activeClientShareB64 = parsed.clientShareB64;
       autoUnlockFired = false;
 
+      const loadBtn = document.getElementById("loadVaultBtn");
+      loadBtn.disabled = true;
+      loadBtn.textContent = "Syncing...";
+
       try {
         const status = await callSupabaseRpc("get_vault_status", {
           p_vault_id: activeVaultId
         });
 
         if (!status.found) {
-          showUnlockAlert("⚠️ यह Vault ID डेटाबेस में नहीं मिला।", true);
+          showUnlockAlert("Vault not found. Verify your access token or link.", true);
           return;
         }
 
         document.getElementById("vaultDisplayCard").classList.remove("hidden");
         document.getElementById("displayVaultId").textContent = status.vault_id;
-        document.getElementById("displayCiphertext").textContent = status.ciphertext_b64;
         activeUnlockIso = status.unlock_at;
+        document.getElementById("targetUnlockSubtext").textContent =
+          "Target Unlock: " + new Date(status.unlock_at).toLocaleString();
 
         if (status.is_burned) {
-          updateStatusBadge("🔥 BURNED / DESTROYED", "rose");
+          updateStatusBadge("BURNED / SHREDDED", "rose");
           document.getElementById("lockedCountdownArea").classList.add("hidden");
-          showUnlockAlert("🔥 यह मैसेज एक बार खुलने के बाद हमेशा के लिए नष्ट (Burn) हो चुका है।", true);
+          showUnlockAlert("This vault was configured to self-destruct after reading and its key has been permanently destroyed.", true);
           return;
         }
 
@@ -638,10 +632,13 @@
           autoUnlockFired = true;
           await attemptServerUnlock();
         } else {
-          updateStatusBadge("🔒 TIME-LOCKED ON SERVER", "amber");
+          updateStatusBadge("TIME-LOCKED", "amber");
         }
       } catch (err) {
-        showUnlockAlert("⚠️ " + (err.message || "लोड करने में समस्या आई।"), true);
+        showUnlockAlert(err.message || "Unable to retrieve vault status.", true);
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.textContent = "Load Vault";
       }
     }
 
@@ -649,11 +646,11 @@
       const badge = document.getElementById("displayStatusBadge");
       badge.textContent = text;
       if (color === "emerald") {
-        badge.className = "text-xs mono px-3 py-1 rounded-full border font-semibold bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+        badge.className = "text-[11px] mono px-3 py-1 rounded-full border font-semibold bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
       } else if (color === "rose") {
-        badge.className = "text-xs mono px-3 py-1 rounded-full border font-semibold bg-rose-500/10 border-rose-500/30 text-rose-400";
+        badge.className = "text-[11px] mono px-3 py-1 rounded-full border font-semibold bg-rose-500/10 border-rose-500/30 text-rose-400";
       } else {
-        badge.className = "text-xs mono px-3 py-1 rounded-full border font-semibold bg-amber-500/10 border-amber-500/30 text-amber-400";
+        badge.className = "text-[11px] mono px-3 py-1 rounded-full border font-semibold bg-amber-500/10 border-amber-500/30 text-amber-400";
       }
     }
 
@@ -694,7 +691,7 @@
 
       const btn = document.getElementById("tryUnlockBtn");
       btn.disabled = true;
-      btn.textContent = "⏳ सर्वर घड़ी की जांच हो रही है...";
+      btn.textContent = "Verifying Server Timestamp...";
 
       try {
         const res = await callSupabaseRpc("attempt_unlock_vault", {
@@ -702,21 +699,21 @@
         });
 
         if (res.status === "BURNED") {
-          updateStatusBadge("🔥 BURNED", "rose");
-          showUnlockAlert("🔥 " + res.message, true);
+          updateStatusBadge("BURNED / SHREDDED", "rose");
+          document.getElementById("lockedCountdownArea").classList.add("hidden");
+          showUnlockAlert("This vault was configured to self-destruct and has already been permanently destroyed.", true);
           return;
         }
 
         if (res.status === "LOCKED" || res.is_locked) {
-          const secsLeft = (res.remaining_ms / 1000).toFixed(1);
+          const secsLeft = Math.ceil(res.remaining_ms / 1000);
           showUnlockAlert(
-            `⛔ ACCESS DENIED BY SERVER: अभी समय पूरा होने में ${secsLeft} सेकंड बाकी हैं! सर्वर ने चाबी देने से मना कर दिया।`,
+            `LOCK ENFORCED BY SERVER: Decryption key release rejected (${secsLeft}s remaining on authoritative server clock).`,
             false
           );
           return;
         }
 
-        // समय पूरा हो गया! दोनों चाबियों को जोड़कर ब्राउज़र में मैसेज डिक्रिप्ट करें:
         const plaintext = await reconstructAndDecryptSecret(
           res.ciphertext_b64,
           res.iv_b64,
@@ -730,12 +727,12 @@
         document.getElementById("lockedCountdownArea").classList.add("hidden");
         document.getElementById("unlockedPlaintextArea").classList.remove("hidden");
         document.getElementById("decryptedMessageOutput").textContent = plaintext;
-        updateStatusBadge("🔓 UNLOCKED & DECRYPTED", "emerald");
+        updateStatusBadge("DECRYPTED", "emerald");
       } catch (err) {
-        showUnlockAlert("⚠️ " + (err.message || "अनलॉक करने में त्रुटि हुई।"), true);
+        showUnlockAlert(err.message || "Decryption failed.", true);
       } finally {
         btn.disabled = false;
-        btn.textContent = "🔐 अभी सर्वर से खोलने की कोशिश करें (Test Server Lock)";
+        btn.textContent = "Verify Server Lock Status";
       }
     }
 
@@ -746,27 +743,31 @@
       handleLoadVault(code);
     }
 
-    function copyValue(inputId) {
+    function copyValue(inputId, btnId, defaultLabel) {
       const el = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
       navigator.clipboard.writeText(el.value);
-      alert("कॉपी हो गया!");
+      btn.textContent = "Copied ✓";
+      setTimeout(() => {
+        btn.textContent = defaultLabel;
+      }, 2000);
     }
 
     function copyDecryptedText() {
       const text = document.getElementById("decryptedMessageOutput").textContent;
+      const btn = document.getElementById("copyDecryptedBtn");
       navigator.clipboard.writeText(text);
-      alert("अनलॉक किया हुआ मैसेज कॉपी हो गया!");
+      btn.textContent = "Copied ✓";
+      setTimeout(() => {
+        btn.textContent = "Copy Secret";
+      }, 2000);
     }
 
     // ========================================================================
-    // 5. INITIALIZE ON PAGE LOAD
+    // 5. AUTO-INITIALIZE ON LOAD
     // ========================================================================
     window.addEventListener("DOMContentLoaded", () => {
-      setQuickTime(2); // डिफ़ॉल्ट रूप से +2 मिनट सेट करें ताकि आप तुरंत टेस्ट कर सकें
-
-      if (!isConfigured()) {
-        document.getElementById("configBanner").classList.remove("hidden");
-      }
+      setQuickTime(60); // Default to +1 hour
 
       if (window.location.hash && window.location.hash.includes("v=") && window.location.hash.includes("k=")) {
         document.getElementById("unlockAccessInput").value = window.location.href;
