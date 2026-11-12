@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ChronoCrypt — Zero-Knowledge Time-Locked Vault</title>
+  <title>ChronoCrypt — Mathematical Time-Locked Vault</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,19 +45,19 @@
           <div class="flex items-center gap-2">
             <h1 class="text-base font-bold tracking-tight text-white">CHRONOCRYPT</h1>
             <span class="text-[10px] mono font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              AES-256-GCM
+              AES-256 + TLOCK IBE
             </span>
           </div>
-          <p class="text-xs text-gray-400">Zero-Knowledge Time-Locked Vault</p>
+          <p class="text-xs text-gray-400">Zero-Knowledge Mathematical Time-Locked Vault</p>
         </div>
       </div>
 
       <!-- TAB SWITCHER -->
       <div class="grid grid-cols-2 rounded-xl bg-gray-900/90 p-1 border border-white/10">
-        <button id="tabCreateBtn" onclick="switchTab('create')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-gray-950 shadow-sm transition-all">
+        <button id="tabCreateBtn" onclick="window.switchTab('create')" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-gray-950 shadow-sm transition-all">
           Create Vault
         </button>
-        <button id="tabUnlockBtn" onclick="switchTab('unlock')" class="px-4 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-all">
+        <button id="tabUnlockBtn" onclick="window.switchTab('unlock')" class="px-4 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-all">
           Access Vault
         </button>
       </div>
@@ -73,9 +73,9 @@
     <section id="sectionCreate" class="space-y-6">
       <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
         <div>
-          <h2 class="text-lg font-semibold text-white">Seal a Time-Locked Secret</h2>
+          <h2 class="text-lg font-semibold text-white">Seal a Mathematical Time-Locked Secret</h2>
           <p class="text-xs text-gray-400 mt-1 leading-relaxed">
-            Your message is encrypted locally inside your browser using 256-bit AES-GCM before transmission. It remains mathematically unreadable until the server clock reaches your exact unlock timestamp.
+            Protected by dual-layer cryptography: Client-side 256-bit AES-GCM combined with decentralized threshold time-lock encryption (League of Entropy). Decryption keys do not mathematically exist until your target timestamp arrives.
           </p>
         </div>
 
@@ -90,7 +90,7 @@
           <textarea
             id="secretInput"
             rows="5"
-            oninput="updateByteCounter()"
+            oninput="window.updateByteCounter()"
             placeholder="Enter confidential notes, recovery phrases, passwords, or time-capsuled messages..."
             class="w-full rounded-xl bg-gray-950/90 border border-white/10 focus:border-emerald-500/60 focus:outline-none p-4 text-sm mono text-gray-100 placeholder-gray-600 transition resize-y"
           ></textarea>
@@ -103,12 +103,12 @@
               Unlock Date & Time
             </label>
             <div class="flex flex-wrap gap-1.5">
-              <button type="button" onclick="setQuickTime(2)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+2m</button>
-              <button type="button" onclick="setQuickTime(15)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+15m</button>
-              <button type="button" onclick="setQuickTime(60)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+1h</button>
-              <button type="button" onclick="setQuickTime(1440)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+24h</button>
-              <button type="button" onclick="setQuickTime(4320)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+3d</button>
-              <button type="button" onclick="setQuickTime(10080)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+7d</button>
+              <button type="button" onclick="window.setQuickTime(2)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+2m</button>
+              <button type="button" onclick="window.setQuickTime(15)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+15m</button>
+              <button type="button" onclick="window.setQuickTime(60)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+1h</button>
+              <button type="button" onclick="window.setQuickTime(1440)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+24h</button>
+              <button type="button" onclick="window.setQuickTime(4320)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+3d</button>
+              <button type="button" onclick="window.setQuickTime(10080)" class="text-[11px] mono px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-white/5 transition">+7d</button>
             </div>
           </div>
           <input
@@ -133,24 +133,24 @@
         <!-- SEAL BUTTON -->
         <button
           id="createVaultBtn"
-          onclick="handleCreateVault()"
+          onclick="window.handleCreateVault()"
           class="w-full py-3.5 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-gray-950 font-semibold text-sm transition shadow-lg shadow-emerald-500/15"
         >
           Encrypt & Seal Time-Locked Vault
         </button>
 
-        <!-- GENERATED CREDENTIALS MODAL / CARD -->
+        <!-- GENERATED CREDENTIALS CARD -->
         <div id="createdResultBox" class="hidden pt-6 border-t border-white/10 space-y-5">
           <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2.5">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span class="text-xs mono uppercase tracking-wider text-emerald-400 font-semibold">Vault Sealed Successfully</span>
+              <span class="text-xs mono uppercase tracking-wider text-emerald-400 font-semibold">Vault Sealed & Time-Locked</span>
             </div>
             <span id="createdUnlockTimeText" class="text-xs mono text-gray-300"></span>
           </div>
 
           <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200/90 leading-relaxed">
-            <strong class="text-amber-300">Save Your Access Credentials:</strong> Your client decryption key is embedded inside the link and access token below. It is never stored on our servers and cannot be recovered if lost.
+            <strong class="text-amber-300">Save Your Access Credentials:</strong> Your client decryption share is embedded inside the link and token below. It is never transmitted to any server and cannot be recovered if lost.
           </div>
 
           <!-- SHAREABLE URL -->
@@ -160,7 +160,7 @@
             </label>
             <div class="flex gap-2">
               <input id="resultShareLink" type="text" readonly class="flex-1 rounded-xl bg-gray-950 border border-white/10 px-3.5 py-2.5 text-xs mono text-emerald-300 focus:outline-none" />
-              <button id="copyLinkBtn" onclick="copyValue('resultShareLink', 'copyLinkBtn', 'Copy Link')" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-white transition whitespace-nowrap">
+              <button id="copyLinkBtn" onclick="window.copyValue('resultShareLink', 'copyLinkBtn', 'Copy Link')" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-white transition whitespace-nowrap">
                 Copy Link
               </button>
             </div>
@@ -173,14 +173,14 @@
             </label>
             <div class="flex gap-2">
               <input id="resultAccessCode" type="text" readonly class="flex-1 rounded-xl bg-gray-950 border border-white/10 px-3.5 py-2.5 text-xs mono text-gray-300 focus:outline-none" />
-              <button id="copyTokenBtn" onclick="copyValue('resultAccessCode', 'copyTokenBtn', 'Copy Token')" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-white transition whitespace-nowrap">
+              <button id="copyTokenBtn" onclick="window.copyValue('resultAccessCode', 'copyTokenBtn', 'Copy Token')" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-white transition whitespace-nowrap">
                 Copy Token
               </button>
             </div>
           </div>
 
           <button
-            onclick="openCreatedVaultInUnlockTab()"
+            onclick="window.openCreatedVaultInUnlockTab()"
             class="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-emerald-400 transition"
           >
             View Live Countdown Timer →
@@ -197,7 +197,7 @@
         <div>
           <h2 class="text-lg font-semibold text-white">Access Time-Locked Vault</h2>
           <p class="text-xs text-gray-400 mt-1">
-            Enter your Vault Access Token or Shareable Link below to synchronize with the server clock.
+            Enter your Vault Access Token or Shareable Link below to synchronize with the global time-lock beacon.
           </p>
         </div>
 
@@ -210,7 +210,7 @@
           />
           <button
             id="loadVaultBtn"
-            onclick="handleLoadVault()"
+            onclick="window.handleLoadVault()"
             class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs transition whitespace-nowrap"
           >
             Load Vault
@@ -234,7 +234,7 @@
         <div id="lockedCountdownArea" class="py-6 text-center space-y-6">
           <div class="space-y-1">
             <p class="text-[11px] mono uppercase tracking-widest text-gray-400">
-              Time Remaining Until Server Key Release
+              Time Remaining Until Cryptographic Beacon Release
             </p>
             <p id="targetUnlockSubtext" class="text-xs text-gray-500 mono"></p>
           </div>
@@ -261,13 +261,13 @@
           <div class="max-w-md mx-auto pt-2 space-y-2.5">
             <button
               id="tryUnlockBtn"
-              onclick="attemptServerUnlock()"
+              onclick="window.attemptServerUnlock()"
               class="w-full py-3 px-4 rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-300 border border-white/10 text-xs mono font-medium transition"
             >
-              Verify Server Lock Status
+              Verify Cryptographic Lock Status
             </button>
             <p class="text-[11px] text-gray-500">
-              This vault will automatically decrypt on screen the moment the server clock reaches zero.
+              This vault will automatically decrypt on screen the moment the countdown reaches zero.
             </p>
           </div>
         </div>
@@ -281,7 +281,7 @@
                 Decrypted Secret Payload
               </span>
             </div>
-            <button id="copyDecryptedBtn" onclick="copyDecryptedText()" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs mono text-white transition">
+            <button id="copyDecryptedBtn" onclick="window.copyDecryptedText()" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs mono text-white transition">
               Copy Secret
             </button>
           </div>
@@ -294,24 +294,29 @@
 
   <!-- MINIMAL SECURITY FOOTER -->
   <footer class="border-t border-white/5 py-5 text-center text-[11px] text-gray-600 mono">
-    End-to-End Client-Side AES-256-GCM • 2-of-2 Split-Key Architecture • Server Clock Enforced
+    AES-256-GCM • League of Entropy BLS12-381 Timelock (tlock) • Zero Premature Decryption
   </footer>
 
-  <script>
+  <script type="module">
+    import { Buffer } from "https://esm.sh/buffer@6.0.3";
+    window.Buffer = Buffer;
+    import {
+      timelockEncrypt,
+      timelockDecrypt,
+      mainnetClient,
+      roundAt
+    } from "https://esm.sh/tlock-js@0.9.0?bundle";
+
     // ========================================================================
-    // 1. PRODUCTION SUPABASE CONFIGURATION (LOCKED & HARDCODED)
+    // 1. PRODUCTION SUPABASE CONFIGURATION
     // ========================================================================
     const SUPABASE_URL = "https://xipganjsopjremxeiwav.supabase.co";
     const SUPABASE_KEY = "sb_publishable_8BWrZEFaKQXCu70C4HzdBQ_jYWQeR71";
 
-    // Clean up any old localStorage overrides from previous testing
-    try {
-      localStorage.removeItem("CHRONO_SUPABASE_URL");
-      localStorage.removeItem("CHRONO_SUPABASE_KEY");
-    } catch (_) {}
+    const drandClient = mainnetClient();
 
     // ========================================================================
-    // 2. WEB CRYPTO ENGINE (AES-256-GCM + 2-OF-2 XOR SPLIT-KEY)
+    // 2. TRIPLE-LOCK CRYPTO ENGINE (AES-256-GCM + 2-OF-2 XOR + DRAND TLOCK IBE)
     // ========================================================================
     function bytesToBase64Url(bytes) {
       let binary = "";
@@ -333,6 +338,13 @@
       return out;
     }
 
+    /**
+     * Encrypts plaintext with AES-256-GCM, splits the 256-bit key into
+     * ClientShare and ServerShare, and then mathematically time-locks
+     * ServerShare against the future League of Entropy (drand) beacon round.
+     * Even with full database admin access, ServerShare cannot be recovered
+     * until the global drand network publishes the round signature at unlockDate.
+     */
     async function encryptAndSplitSecret(plaintext, unlockDate) {
       const canonicalUnlockIso = unlockDate.toISOString();
       const dekBytes = crypto.getRandomValues(new Uint8Array(32));
@@ -345,6 +357,7 @@
       }
 
       try {
+        // Layer 1: Browser AES-256-GCM Encryption with Timestamp AAD
         const cryptoKey = await crypto.subtle.importKey(
           "raw",
           dekBytes,
@@ -362,11 +375,27 @@
           encodedText
         );
 
+        // Layer 2: Mathematical Time-Lock (BLS12-381 Identity-Based Encryption via drand)
+        const chainInfo = await drandClient.chain().info();
+        const targetRound = roundAt(unlockDate.getTime(), chainInfo);
+
+        const rawServerShareB64 = bytesToBase64Url(serverShareBytes);
+        const tlockArmoredCapsule = await timelockEncrypt(
+          targetRound,
+          Buffer.from(rawServerShareB64, "utf-8"),
+          drandClient
+        );
+
+        // Encode the armored tlock capsule as Base64URL for clean storage
+        const tlockCapsuleB64 = bytesToBase64Url(
+          new TextEncoder().encode(tlockArmoredCapsule)
+        );
+
         return {
           ciphertextB64: bytesToBase64Url(new Uint8Array(cipherBuffer)),
           ivB64: bytesToBase64Url(ivBytes),
           clientKeyShareB64: bytesToBase64Url(clientShareBytes),
-          serverKeyShareB64: bytesToBase64Url(serverShareBytes),
+          serverKeyShareB64: tlockCapsuleB64,
           canonicalUnlockIso
         };
       } finally {
@@ -376,9 +405,26 @@
       }
     }
 
-    async function reconstructAndDecryptSecret(ciphertextB64, ivB64, clientShareB64, serverShareB64, unlockIso) {
+    /**
+     * Unwraps the mathematical drand tlock capsule (which only succeeds if the
+     * League of Entropy round has been reached globally), reconstructs the 256-bit
+     * AES-GCM key via XOR with ClientShare, and verifies the GCM authentication tag.
+     */
+    async function reconstructAndDecryptSecret(ciphertextB64, ivB64, clientShareB64, storedServerPayloadB64, unlockIso) {
+      // Unwrap Layer 2: Decrypt the drand Mathematical Time-Lock Capsule
+      let unwrappedServerShareB64 = storedServerPayloadB64;
+
+      // Check if payload is a tlock capsule (longer than raw 32-byte share)
+      if (storedServerPayloadB64.length > 60) {
+        const armoredCapsule = new TextDecoder().decode(
+          base64UrlToBytes(storedServerPayloadB64)
+        );
+        const decryptedBuffer = await timelockDecrypt(armoredCapsule, drandClient);
+        unwrappedServerShareB64 = new TextDecoder().decode(decryptedBuffer).trim();
+      }
+
       const clientBytes = base64UrlToBytes(clientShareB64);
-      const serverBytes = base64UrlToBytes(serverShareB64);
+      const serverBytes = base64UrlToBytes(unwrappedServerShareB64);
 
       if (clientBytes.byteLength !== 32 || serverBytes.byteLength !== 32) {
         throw new Error("Invalid decryption key share length.");
@@ -414,7 +460,7 @@
 
         return new TextDecoder().decode(plainBuffer);
       } catch (_) {
-        throw new Error("Cryptographic verification failed. Invalid access token or corrupted ciphertext.");
+        throw new Error("Cryptographic verification failed. Invalid access token or tampered parameters.");
       } finally {
         dekBytes.fill(0);
         clientBytes.fill(0);
@@ -517,7 +563,7 @@
       }
 
       btn.disabled = true;
-      btn.textContent = "Encrypting Locally & Sealing Vault...";
+      btn.textContent = "Generating Mathematical Time-Lock Capsule...";
 
       try {
         const bundle = await encryptAndSplitSecret(secretText, unlockDate);
@@ -632,7 +678,7 @@
           autoUnlockFired = true;
           await attemptServerUnlock();
         } else {
-          updateStatusBadge("TIME-LOCKED", "amber");
+          updateStatusBadge("MATHEMATICALLY LOCKED", "amber");
         }
       } catch (err) {
         showUnlockAlert(err.message || "Unable to retrieve vault status.", true);
@@ -691,7 +737,7 @@
 
       const btn = document.getElementById("tryUnlockBtn");
       btn.disabled = true;
-      btn.textContent = "Verifying Server Timestamp...";
+      btn.textContent = "Verifying Server & Beacon Signature...";
 
       try {
         const res = await callSupabaseRpc("attempt_unlock_vault", {
@@ -708,7 +754,7 @@
         if (res.status === "LOCKED" || res.is_locked) {
           const secsLeft = Math.ceil(res.remaining_ms / 1000);
           showUnlockAlert(
-            `LOCK ENFORCED BY SERVER: Decryption key release rejected (${secsLeft}s remaining on authoritative server clock).`,
+            `LOCK ENFORCED: Decryption rejected (${secsLeft}s remaining). Neither the server nor the global drand beacon has generated the future decryption key yet.`,
             false
           );
           return;
@@ -732,7 +778,7 @@
         showUnlockAlert(err.message || "Decryption failed.", true);
       } finally {
         btn.disabled = false;
-        btn.textContent = "Verify Server Lock Status";
+        btn.textContent = "Verify Cryptographic Lock Status";
       }
     }
 
@@ -763,18 +809,25 @@
       }, 2000);
     }
 
-    // ========================================================================
-    // 5. AUTO-INITIALIZE ON LOAD
-    // ========================================================================
-    window.addEventListener("DOMContentLoaded", () => {
-      setQuickTime(60); // Default to +1 hour
+    // Bind handlers to global window object for HTML attributes
+    window.updateByteCounter = updateByteCounter;
+    window.switchTab = switchTab;
+    window.setQuickTime = setQuickTime;
+    window.handleCreateVault = handleCreateVault;
+    window.handleLoadVault = handleLoadVault;
+    window.attemptServerUnlock = attemptServerUnlock;
+    window.openCreatedVaultInUnlockTab = openCreatedVaultInUnlockTab;
+    window.copyValue = copyValue;
+    window.copyDecryptedText = copyDecryptedText;
 
-      if (window.location.hash && window.location.hash.includes("v=") && window.location.hash.includes("k=")) {
-        document.getElementById("unlockAccessInput").value = window.location.href;
-        switchTab("unlock");
-        handleLoadVault(window.location.href);
-      }
-    });
+    // Initialize defaults
+    setQuickTime(60);
+
+    if (window.location.hash && window.location.hash.includes("v=") && window.location.hash.includes("k=")) {
+      document.getElementById("unlockAccessInput").value = window.location.href;
+      switchTab("unlock");
+      handleLoadVault(window.location.href);
+    }
   </script>
 </body>
 </html>
